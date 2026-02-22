@@ -69,7 +69,14 @@ def dashboard_page():
                             if len(p["authors"]) > 3:
                                 authors_str += " et al."
                             ui.label(authors_str).classes("text-sm text-gray-500")
-                        ui.label(p["added_at"][:10]).classes("text-sm text-gray-400")
+                        with ui.row().classes("items-center gap-3"):
+                            rating = p.get("self_rating")
+                            if rating is not None:
+                                rating_labels = {0: "Not rated", 1: "Lost", 2: "Shaky", 3: "Getting there", 4: "Solid", 5: "Nailed it"}
+                                label = rating_labels[round(rating * 5)]
+                                color = _confidence_color(rating)
+                                ui.badge(label).style(f"background-color: {color}; color: white")
+                            ui.label(p["added_at"][:10]).classes("text-sm text-gray-400")
 
         # Recent chats
         if recent_chats:

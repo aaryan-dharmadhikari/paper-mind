@@ -31,11 +31,24 @@ def paper_detail_page(paper_id: int):
             ui.label(authors_str).classes("text-gray-600")
         ui.label(f"Added {paper['added_at'][:10]}").classes("text-sm text-gray-400")
 
-        # Chat button — single shared conversation, agent toggle is inside
-        with ui.row().classes("gap-2"):
+        # Self-rating + chat button
+        with ui.row().classes("w-full items-center gap-4"):
             ui.button("Open Chat", icon="chat",
                       on_click=lambda: ui.navigate.to(f"/chat/new?paper_id={paper_id}&agent=teach")
                       ).props("color=primary")
+
+            ui.label("My understanding:").classes("text-sm text-gray-500 ml-auto")
+            current_rating = paper.get("self_rating") or 0.0
+            rating_labels = {0: "Not rated", 1: "Lost", 2: "Shaky", 3: "Getting there", 4: "Solid", 5: "Nailed it"}
+            rating_label = ui.label(rating_labels[round(current_rating * 5)]).classes("text-sm font-medium")
+
+            def on_rating_change(e):
+                val = e.value / 5.0
+                db.update_paper_self_rating(paper_id, val)
+                rating_label.text = rating_labels[e.value]
+
+            ui.slider(min=0, max=5, step=1, value=round(current_rating * 5),
+                      on_change=on_rating_change).props("label-always").classes("w-48")
 
         # Abstract
         if paper["abstract"]:

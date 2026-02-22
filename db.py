@@ -68,6 +68,10 @@ def _conn() -> sqlite3.Connection:
 def init_db():
     with _conn() as conn:
         conn.executescript(SCHEMA)
+        # Migrations
+        cols = {r[1] for r in conn.execute("PRAGMA table_info(papers)").fetchall()}
+        if "self_rating" not in cols:
+            conn.execute("ALTER TABLE papers ADD COLUMN self_rating REAL")
 
 
 # ── Papers ──────────────────────────────────────────────────────────────
@@ -109,9 +113,15 @@ def update_paper_summary(paper_id: int, summary: str):
         conn.execute("UPDATE papers SET summary = ? WHERE id = ?", (summary, paper_id))
 
 
+def update_paper_self_rating(paper_id: int, rating: float):
+    with _conn() as conn:
+        conn.execute("UPDATE papers SET self_rating = ? WHERE id = ?",
+                     (max(0.0, min(1.0, rating)), paper_id))
+
+
 def list_papers() -> list[dict]:
     with _conn() as conn:
-        rows = conn.execute("SELECT id, title, authors, abstract, summary, added_at FROM papers ORDER BY added_at DESC").fetchall()
+        rows = conn.execute("SELECT id, title, authors, abstract, summary, self_rating, added_at FROM papers ORDER BY added_at DESC").fetchall()
     results = []
     for r in rows:
         d = dict(r)
