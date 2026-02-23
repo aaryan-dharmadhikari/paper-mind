@@ -29,6 +29,13 @@ async def process_pdf(file_path: Path, original_name: str) -> int:
     # LLM parse — sends PDF directly, no local text extraction needed
     parsed = await llm.parse_paper_with_llm(pdf_base64)
 
+    # Check for duplicate by title
+    title = parsed.get("title", "")
+    if title:
+        existing = db.get_paper_by_title(title)
+        if existing:
+            raise DuplicatePaperError(existing["id"])
+
     # Store paper
     paper_id = db.insert_paper(
         title=parsed.get("title", original_name),

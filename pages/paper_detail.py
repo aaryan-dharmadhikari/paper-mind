@@ -21,11 +21,62 @@ def paper_detail_page(paper_id: int):
     notes = db.get_notes_for_paper(paper_id)
 
     with ui.column().classes("w-full max-w-4xl mx-auto p-4 gap-4"):
-        # Title + authors
-        if paper["source_url"]:
-            ui.link(paper["title"], f"/uploads/{paper['source_url']}", new_tab=True).classes("text-2xl font-bold")
-        else:
-            ui.label(paper["title"]).classes("text-2xl font-bold")
+        # Title (editable) + PDF link
+        with ui.row().classes("w-full items-center gap-2"):
+            title_label = ui.label(paper["title"]).classes("text-2xl font-bold")
+            if paper["source_url"]:
+                ui.link("PDF", f"/uploads/{paper['source_url']}", new_tab=True).classes("text-sm")
+
+            title_input = ui.input(value=paper["title"]).classes("text-2xl font-bold flex-1")
+            title_input.visible = False
+
+            def start_rename():
+                title_label.visible = False
+                edit_btn.visible = False
+                title_input.visible = True
+                save_btn.visible = True
+                cancel_btn.visible = True
+
+            def save_rename():
+                new_title = title_input.value.strip()
+                if new_title:
+                    db.update_paper_title(paper_id, new_title)
+                    title_label.text = new_title
+                title_label.visible = True
+                edit_btn.visible = True
+                title_input.visible = False
+                save_btn.visible = False
+                cancel_btn.visible = False
+
+            def cancel_rename():
+                title_input.value = title_label.text
+                title_label.visible = True
+                edit_btn.visible = True
+                title_input.visible = False
+                save_btn.visible = False
+                cancel_btn.visible = False
+
+            edit_btn = ui.button(icon="edit", on_click=start_rename).props("flat dense size=sm")
+            save_btn = ui.button(icon="check", on_click=save_rename).props("flat dense size=sm color=green")
+            save_btn.visible = False
+            cancel_btn = ui.button(icon="close", on_click=cancel_rename).props("flat dense size=sm color=red")
+            cancel_btn.visible = False
+
+            ui.space()
+
+            async def confirm_delete():
+                with ui.dialog() as dialog, ui.card():
+                    ui.label("Delete this paper and all its data?").classes("font-medium")
+                    with ui.row().classes("w-full justify-end gap-2 mt-2"):
+                        ui.button("Cancel", on_click=dialog.close).props("flat")
+                        def do_delete():
+                            db.delete_paper(paper_id)
+                            dialog.close()
+                            ui.navigate.to("/")
+                        ui.button("Delete", on_click=do_delete).props("color=red")
+                dialog.open()
+
+            ui.button(icon="delete", on_click=confirm_delete).props("flat dense size=sm color=red")
         authors_str = ", ".join(paper["authors"])
         if authors_str:
             ui.label(authors_str).classes("text-gray-600")

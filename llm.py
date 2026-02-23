@@ -2,6 +2,8 @@ import json
 import litellm
 from config import LITELLM_MODEL
 
+litellm.drop_params = True
+
 PARSE_PAPER_SYSTEM = """You are an academic paper analysis assistant. Given a research paper, extract structured information as JSON.
 
 Return ONLY valid JSON with these fields:

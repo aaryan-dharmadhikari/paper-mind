@@ -3,6 +3,8 @@ __pycache__/
 .env
 *.db
 uploads/
+data/
+.backup/
 .venv/
 dist/
 *.egg-info/

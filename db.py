@@ -108,6 +108,34 @@ def get_paper_by_filename(filename: str) -> dict | None:
     return d
 
 
+def get_paper_by_title(title: str) -> dict | None:
+    with _conn() as conn:
+        row = conn.execute("SELECT * FROM papers WHERE LOWER(title) = LOWER(?)", (title,)).fetchone()
+    if row is None:
+        return None
+    d = dict(row)
+    d["authors"] = json.loads(d["authors"])
+    return d
+
+
+def update_paper_title(paper_id: int, title: str):
+    with _conn() as conn:
+        conn.execute("UPDATE papers SET title = ? WHERE id = ?", (title, paper_id))
+
+
+def delete_paper(paper_id: int):
+    with _conn() as conn:
+        conn.execute("DELETE FROM paper_concepts WHERE paper_id = ?", (paper_id,))
+        conn.execute("DELETE FROM user_notes WHERE paper_id = ?", (paper_id,))
+        conn.execute("DELETE FROM chat_history WHERE paper_id = ?", (paper_id,))
+        conn.execute("DELETE FROM papers WHERE id = ?", (paper_id,))
+        conn.execute("""
+            DELETE FROM concepts WHERE id NOT IN (
+                SELECT DISTINCT concept_id FROM paper_concepts
+            )
+        """)
+
+
 def update_paper_summary(paper_id: int, summary: str):
     with _conn() as conn:
         conn.execute("UPDATE papers SET summary = ? WHERE id = ?", (summary, paper_id))
